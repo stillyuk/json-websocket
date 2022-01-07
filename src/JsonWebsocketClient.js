@@ -1,4 +1,4 @@
-class GlobalSocket {
+class JsonWebsocketClient {
   socketUrl
   ws
   opened = false

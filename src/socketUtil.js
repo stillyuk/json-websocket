@@ -10,7 +10,7 @@ function onClientMessage(connInfo, type, handleMessage) {
       return
     }
 
-    if (clientInfo.type != type) {
+    if (clientInfo.type !== type) {
       return
     }
     if (!clientInfo.once) {
@@ -28,7 +28,7 @@ function onClientMessage(connInfo, type, handleMessage) {
 }
 
 const sendClient = (connInfoList, type, newData, isForce) => {
-  if (connInfoList.length == 0) {
+  if (connInfoList.length === 0) {
     return
   }
   try {
@@ -38,7 +38,7 @@ const sendClient = (connInfoList, type, newData, isForce) => {
 
   for (let i = 0; i < connInfoList.length; i++) {
     let connInfo = connInfoList[i]
-    let isNeed = connInfo.types.find(item => item == type) != undefined
+    let isNeed = connInfo.types.find(item => item === type) !== undefined
     if (!isNeed) {
       continue
     }
@@ -46,7 +46,7 @@ const sendClient = (connInfoList, type, newData, isForce) => {
       continue
     }
     if (isForce || !isEqual(connInfo.prevData[type], newData)) {
-      if (type == 'wsUpdateInfo') {
+      if (type === 'wsUpdateInfo') {
         console.log(connInfo.address, newData)
       }
       connInfo.prevData[type] = newData
