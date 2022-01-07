@@ -5,12 +5,12 @@ const {onClientMessage} = require('./socketUtil')
 
 let connInfoList = []
 
-function startSocketServer(port, dbConn) {
+function startSocketServer(port) {
   let server = ws.createServer(function (conn) {
     conn.setMaxListeners(20)
     let currentConnInfo = {
       conn,
-      datetime: currentDatetime(),
+      timestamp: +new Date(),
       ip: conn.headers['x-real-ip' || 'x-forwarded-for'] || '',
       address: '',
       types: [],
@@ -23,7 +23,6 @@ function startSocketServer(port, dbConn) {
 
     onClientMessage(currentConnInfo, 'version', (data) => {
       currentConnInfo.version = data
-
     })
 
     onClientMessage(currentConnInfo, 'close', (closeType) => {
