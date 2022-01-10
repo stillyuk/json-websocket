@@ -1,19 +1,24 @@
 let ws = require('nodejs-websocket')
-
-const {sendClient} = require('./socketUtil')
-const {onClientMessage} = require('./socketUtil')
-
-let connInfoList = []
+let isEqual = require('lodash/isEqual')
+const {middleware} = require('./middleware')
 
 class JsonWebsocketServer {
+  connInfoList = []
   port
   taskList = []
+  middlewareList = []
 
-  constructor(port, taskList) {
+  constructor(port) {
     this.port = port
+    this.start()
+  }
+
+  use(middleware) {
+    this.middlewareList.push(middleware)
   }
 
   addTask(task) {
+    task.start()
     this.taskList.push(task)
   }
 
@@ -23,25 +28,21 @@ class JsonWebsocketServer {
       let currentConnInfo = {
         conn,
         timestamp: +new Date(),
-        ip: conn.headers['x-real-ip' || 'x-forwarded-for'] || '',
-        address: '',
         types: [],
-        active: '1',
-        version: '',
         prevData: {}
       }
 
-      connInfoList.push(currentConnInfo)
+      this.connInfoList.push(currentConnInfo)
 
       for (let task of this.taskList) {
         task.onClient(currentConnInfo)
       }
 
-      onClientMessage(currentConnInfo, 'version', (data) => {
+      this.onClientMessage(currentConnInfo, 'version', (data) => {
         currentConnInfo.version = data
       })
 
-      onClientMessage(currentConnInfo, 'close', (closeType) => {
+      this.onClientMessage(currentConnInfo, 'close', (closeType) => {
         let index = currentConnInfo.types.indexOf(closeType)
         if (index !== -1) {
           currentConnInfo.types.splice(index, 1)
@@ -56,14 +57,83 @@ class JsonWebsocketServer {
       })
 
       const clear = () => {
-        let index = connInfoList.findIndex(item => item.conn === conn)
+        let index = this.connInfoList.findIndex(item => item.conn === conn)
         if (index !== -1) {
-          connInfoList.splice(index, 1)
+          this.connInfoList.splice(index, 1)
         }
       }
     })
     server.listen(this.port)
   }
+
+  onClientMessage(connInfo, type, handleMessage) {
+    connInfo.conn.on('text', async (clientStr) => {
+      let clientInfo
+      try {
+        clientInfo = JSON.parse(clientStr)
+      } catch (e) {
+        console.log('json parse error ', clientStr)
+        return
+      }
+
+      if (clientInfo.type !== type) {
+        return
+      }
+      let complete = async (_, __, next) => {
+        if (!clientInfo.once) {
+          connInfo.types.push(type)
+        }
+        if (handleMessage) {
+          try {
+            await handleMessage(clientInfo.data)
+          } catch (e) {
+            console.log(clientInfo.data)
+            console.log(e)
+          }
+        }
+        next()
+      }
+      try {
+        await middleware([...this.middlewareList, complete], connInfo, clientInfo)
+      } catch (e) {
+
+      }
+    })
+  }
+
+  sendClient(connInfoList, type, newData, isForce) {
+    if (connInfoList.length === 0) {
+      return
+    }
+    try {
+      // logger.debug('sendClient start', JSON.stringify(newData).substr(0, 15))
+    } catch (_) {
+    }
+
+    for (let i = 0; i < connInfoList.length; i++) {
+      let connInfo = connInfoList[i]
+      let isNeed = connInfo.types.find(item => item === type) !== undefined
+      if (!isNeed) {
+        continue
+      }
+      if (newData === null) {
+        continue
+      }
+      if (isForce || !isEqual(connInfo.prevData[type], newData)) {
+        if (type === 'wsUpdateInfo') {
+          console.log(connInfo.address, newData)
+        }
+        connInfo.prevData[type] = newData
+        connInfo.conn.sendText(JSON.stringify({
+          type,
+          data: newData
+        }))
+      } else {
+        // logger.debug('sendClient data isEqual')
+      }
+    }
+  }
+
 }
 
 module.exports = JsonWebsocketServer

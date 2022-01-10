@@ -37,7 +37,7 @@ class JsonWebsocketClient {
   refreshSocket() {
     this.initSocket(() => {
       this.opened = false
-      this.list.filter(item => item.once != true).forEach(item => {
+      this.list.filter(item => item.once !== true).forEach(item => {
         this.sendToServer(item.type, item.data)
       })
     })
@@ -50,7 +50,7 @@ class JsonWebsocketClient {
   onMessage(e) {
     let result = JSON.parse(e.data)
     this.list.forEach(item => {
-      if (item.type == result.type || item.type.indexOf(result.type) != -1)
+      if (item.type === result.type || item.type.indexOf(result.type) !== -1)
         item.callback(result.data)
     })
   }
@@ -67,7 +67,7 @@ class JsonWebsocketClient {
   }
 
   close(type) {
-    let index = this.list.findIndex(item => item.type == type)
+    let index = this.list.findIndex(item => item.type === type)
     this.list.splice(index, 1)
     this.sendToServer('close', type)
   }
