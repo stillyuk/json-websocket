@@ -28,6 +28,7 @@ class JsonWebsocketClient {
         }, 1000)
       }
     } catch (e) {
+      console.log(e.message)
       setTimeout(() => {
         this.refreshSocket()
       }, 1000)
@@ -50,8 +51,9 @@ class JsonWebsocketClient {
   onMessage(e) {
     let result = JSON.parse(e.data)
     this.list.forEach(item => {
-      if (item.type === result.type || item.type.indexOf(result.type) !== -1)
+      if (item.type === result.type) {
         item.callback(result.data)
+      }
     })
   }
 
@@ -72,3 +74,6 @@ class JsonWebsocketClient {
     this.sendToServer('close', type)
   }
 }
+
+// module.exports = JsonWebsocketClient
+export default JsonWebsocketClient

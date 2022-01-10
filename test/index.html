@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+<script type="module">
+  import JsonWebsocketClient from '../src/JsonWebsocketClient.js'
+
+  let client = new JsonWebsocketClient('ws:localhost:8899')
+
+  client.addWatch('serverTimestamp', null, (a) => {
+    console.log(a)
+  })
+  client.addWatch('version', '1.0')
+  client.addWatch('error', null, (data) => {
+    console.log(data)
+  })
+</script>
+
+</body>
+</html>

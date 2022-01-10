@@ -10,7 +10,6 @@ class JsonWebsocketServer {
 
   constructor(port) {
     this.port = port
-    this.start()
   }
 
   use(middleware) {
@@ -28,7 +27,7 @@ class JsonWebsocketServer {
       let currentConnInfo = {
         conn,
         timestamp: +new Date(),
-        types: [],
+        types: ['error'],
         prevData: {}
       }
 
@@ -79,10 +78,10 @@ class JsonWebsocketServer {
       if (clientInfo.type !== type) {
         return
       }
+      if (!clientInfo.once) {
+        connInfo.types.push(type)
+      }
       let complete = async (_, __, next) => {
-        if (!clientInfo.once) {
-          connInfo.types.push(type)
-        }
         if (handleMessage) {
           try {
             await handleMessage(clientInfo.data)
